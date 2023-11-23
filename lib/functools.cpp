@@ -1,12 +1,11 @@
 #include <concepts>
+#include <type_traits>
 #include <functional>
 #include <vector>
 #include <tuple>
 #include <algorithm>
 #include <utility>
-#include <map>
 #include <iostream>
-#include <type_traits>
 
 // namespace functools {
 
@@ -169,8 +168,7 @@ auto range_filter(T&& a, T&& b) {
         };
 }
 
-template <typename F, typename... Rest>
-auto pipeline(F&& first, Rest... rest) {
+auto pipeline(auto&& first, auto&&... rest) {
     if constexpr (sizeof...(rest) == 0) {
         return first;
     } else {
@@ -178,6 +176,16 @@ auto pipeline(F&& first, Rest... rest) {
             return pipeline(rest...)(first(std::forward<decltype(args)>(args)...));
         };
     }
+}
+
+auto recursive_seq(auto&& init, auto&& f, int N) {
+    std::vector<std::decay_t<decltype(init)>> result;
+    result.reserve(N);
+    result.push_back(std::forward<decltype(init)>(init));
+    for (auto i = 1; i < N; ++i) {
+        result.push_back(f(result.back()));
+    }
+    return result;
 }
 
 // };  // namespace functools
