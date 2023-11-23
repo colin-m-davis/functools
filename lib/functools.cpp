@@ -155,17 +155,29 @@ bool none_of(Args... args) {
 }
 
 template <typename T>
-concept Ordered = requires(T a, T b) {
+concept PartialEq = requires(T a, T b) {
     {a < b} -> std::convertible_to<bool>;
+    {a == b} -> std::convertible_to<bool>;
 };
 
-// open interval
-template <Ordered T>
+// half-open interval
+template <PartialEq T>
 auto range_filter(T&& a, T&& b) {
     return
         [a, b](T c) { 
-            return a < c && c < b;
+            return (a == c || a < c) && c < b;
         };
+}
+
+template <typename F, typename... Rest>
+auto pipeline(F&& first, Rest... rest) {
+    if constexpr (sizeof...(rest) == 0) {
+        return first;
+    } else {
+        return [=](auto&&... args) {
+            return pipeline(rest...)(first(std::forward<decltype(args)>(args)...));
+        };
+    }
 }
 
 // };  // namespace functools

@@ -12,17 +12,13 @@ void printvec(auto&& vec) {
     }
 }
 
-int a(int x) { return x > 2 && x < 5; }
-
-vec<int> f(const int x) {
-    return {x, x+1, x+2};
-}
+int h(int x) { return x + 100; }
+int f(int x) { return 2 * x; }
 
 int main() {
-    const auto g = range_filter(1, 4);
-    vec<int> xs{2, 1, 2, 3, 4, 5};
-    const auto [a, b, c] = deconstruct<3>(xs);;
-    printvec(vec<int>{a, b, c});
+    const auto g = pipeline(f, h);
+    std::cout << pipeline(f, h)(1) << ' ' << pipeline(h, f)(1) << '\n';
+    // std::cout << g(3) << '\n';
     // std::cout << none_of(false, 0) << '\n';
     // print(f(1, 2, 3));
 }
