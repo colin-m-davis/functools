@@ -94,8 +94,7 @@ auto map(F&& f, const Vec& vec) {
     return result;
 }
 
-template <typename F, typename Vec>
-auto flat_map(F&& f, const Vec& vec) {
+auto flat_map(auto&& f, const auto& vec) {
     using Elem = typename std::decay_t<decltype(f(*std::begin(vec)))>::value_type;
     std::vector<Elem> result;
     for (const auto& x : vec) {
@@ -106,15 +105,35 @@ auto flat_map(F&& f, const Vec& vec) {
     return result;
 }
 
-template <typename F, typename Vec>
-auto filter(F&& f, const Vec& vec) {
-    using Elem = typename std::decay_t<Vec>::value_type;
+// template <typename Vec>
+auto filter(auto&& f, auto&& vec) {
+    using Elem = typename std::decay_t<decltype(vec)>::value_type;
     std::vector<Elem> result;
-    for (const auto& x : vec) {
+    for (auto&& x : vec) {
         if (f(x)) {
-            result.push_back(x);
+            if constexpr (std::is_nothrow_move_constructible_v<Elem>) {
+                result.push_back(std::move(x));
+            } else {
+                result.push_back(x);
+            }
         }
     }
+    return result;
+}
+
+template <typename T, std::size_t N, std::size_t... Is>
+auto deconstruct_impl(const std::vector<T>& vec, std::index_sequence<Is...>) {
+    return std::make_tuple(vec[Is]..., vec[N - 1]);
+}
+
+// grab first N elements of a vector
+// useful in combination with structured binding
+template <std::size_t N, typename T>
+auto deconstruct(const std::vector<T>& vec) {
+    if (vec.size() < N) {
+        throw std::invalid_argument("Vector size is less than N");
+    }
+    return deconstruct_impl<T, N>(vec, std::make_index_sequence<N - 1>{});
 }
 
 template <typename T>
@@ -133,6 +152,20 @@ bool one_of(Args... args) {
 template <BooleanConvertible... Args>
 bool none_of(Args... args) {
     return (!args && ...);
+}
+
+template <typename T>
+concept Ordered = requires(T a, T b) {
+    {a < b} -> std::convertible_to<bool>;
+};
+
+// open interval
+template <Ordered T>
+auto range_filter(T&& a, T&& b) {
+    return
+        [a, b](T c) { 
+            return a < c && c < b;
+        };
 }
 
 // };  // namespace functools
