@@ -4,12 +4,12 @@
 
 using namespace functools;
 
-int f(int a) { return 2 * a; };
+int f(int a, int b) { return a + b; };
 
 int main() {
     std::vector<int> xs{8, 4, 9, 1};
-    print(map(pipeline(f, f, f, f), xs));
+    // print(map(pipeline(f, f, f, f), xs));
     std::cout << foldl(f, xs) << '\n';
-    std::cout << foldl(pipeline(f, f), xs, 1) << '\n';
-    std::cout << foldr(f, xs, 1) << '\n';
+    // std::cout << foldl(pipeline(f, f), xs, 1) << '\n';
+    std::cout << foldr(f, xs) << '\n';
 }
