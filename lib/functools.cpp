@@ -10,37 +10,22 @@
 
 namespace functools {
 
-// source: https://stackoverflow.com/questions/6245735/pretty-print-stdtuple
-template <typename TupType, size_t... I>
-void print(const TupType& tup, std::index_sequence<I...>) {
-    std::cout << "(";
-    (..., (std::cout << (I == 0? "" : ", ") << std::get<I>(tup)));
-    std::cout << ")\n";
-}
-
-// source: https://stackoverflow.com/questions/6245735/pretty-print-stdtuple
-template <typename... T>
-void print(const std::tuple<T...>& tup) {
-    print(tup, std::make_index_sequence<sizeof...(T)>());
-}
-
-template <typename T>
-concept Iterable = requires(T x) {
-    { std::begin(x) } -> std::forward_iterator;
-    { std::end(x) } -> std::forward_iterator;
-};
-
-void print(const Iterable auto& iterable) {
-    std::cout << "[";
-    std::cout << *std::begin(iterable);
-    for (auto it = std::next(std::begin(iterable)); it != std::end(iterable); ++it) {
-        std::cout << ", " << *it;
-    }
-    std::cout << "]\n";
-}
-
 template <typename T>
 using vec = std::vector<T>;
+
+/*
+returns a function that applies the input functions from left to right on its inputs
+*/
+[[nodiscard]] auto pipeline(auto&& first, auto&&... rest) {
+    if constexpr (sizeof...(rest) == 0) {
+        return first;
+    } else {
+        return
+            [=](auto&&... args) {
+                return pipeline(rest...)(first(std::forward<decltype(args)>(args)...));
+            };
+    }
+}
 
 /*
 creates a sequence of length N, starting from the init and repeatedly applying f on the last value in the sequence
@@ -55,11 +40,19 @@ creates a sequence of length N, starting from the init and repeatedly applying f
     return result;
 }
 
+/*
+helper function for zip
+returns the minimum size across a sequence of containers
+*/
 template <typename... Vecs>
 [[nodiscard]] constexpr auto min_size(const Vecs&... vecs) {
     return std::min({vecs.size()...});
 }
 
+/*
+helper function for zip
+returns a tuple containing the index-th element of each of the containers
+*/
 template <typename... Vecs>
 [[nodiscard]] constexpr auto make_tuple_at_index(int index, const Vecs&... vecs) {
     return std::make_tuple(vecs[index]...);
@@ -85,7 +78,8 @@ template <typename Vec>
 }
 
 /*
-left fold
+left fold (left-to-right)
+https://en.wikipedia.org/wiki/Fold_(higher-order_function)
 */
 template <typename F, typename Vec, typename Init>
 [[nodiscard]] auto foldl(F&& f, const Vec& vec, Init&& init) {
@@ -97,7 +91,8 @@ template <typename F, typename Vec, typename Init>
 }
 
 /*
-right fold
+right fold (right-to-left)
+https://en.wikipedia.org/wiki/Fold_(higher-order_function)
 */
 template <typename F, typename Vec, typename Init>
 [[nodiscard]] auto foldr(F&& f, const Vec& vec, Init&& init) {
@@ -109,7 +104,7 @@ template <typename F, typename Vec, typename Init>
 }
 
 /*
-applies f to each element of the vec
+applies f to each element of the vec and returns the results in order
 */
 template <typename F, typename Vec>
 [[nodiscard]] auto map(F&& f, const Vec& vec) -> Vec {
@@ -172,6 +167,22 @@ template <typename T>
 }
 
 /*
+returns the container...but sorted!
+*/
+[[nodiscard]] auto sorted(const auto& xs) {
+    auto new_xs = xs;
+    sort(new_xs.begin(), new_xs.end());
+    return new_xs;
+}
+
+/*
+returns the container...but reversed!
+*/
+[[nodiscard]] auto reversed(const auto& xs) {
+    return std::vector(xs.crbegin(), xs.crend());
+}
+
+/*
 need separate impl function to take in index sequence as parameter pack
 */
 template <typename T, std::size_t N, std::size_t... Is>
@@ -219,35 +230,6 @@ bool none_of(Args... args) {
 }
 
 /*
-returns a function that applies the input functions from left to right on its inputs
-*/
-[[nodiscard]] auto pipeline(auto&& first, auto&&... rest) {
-    if constexpr (sizeof...(rest) == 0) {
-        return first;
-    } else {
-        return [=](auto&&... args) {
-            return pipeline(rest...)(first(std::forward<decltype(args)>(args)...));
-        };
-    }
-}
-
-/*
-returns the container...but sorted!
-*/
-[[nodiscard]] auto sorted(const auto& xs) {
-    auto new_xs = xs;
-    sort(new_xs.begin(), new_xs.end());
-    return new_xs;
-}
-
-/*
-returns the container...but reversed!
-*/
-[[nodiscard]] auto reversed(const auto& xs) {
-    return std::vector(xs.crbegin(), xs.crend());
-}
-
-/*
 https://en.wikipedia.org/wiki/Total_order
 */
 template <typename T>
@@ -270,6 +252,44 @@ template <Ordered T>
 template <typename T>
 [[nodiscard]] std::pair<T, T> divmod(T x, T d) {
     return {x / d, x % d};
+}
+
+/*
+Iterables can be used in a range-based for loop
+*/
+template <typename T>
+concept Iterable = requires(T x) {
+    { std::begin(x) } -> std::forward_iterator;
+    { std::end(x) } -> std::forward_iterator;
+};
+
+void print(const Iterable auto& iterable) {
+    std::cout << "[";
+    std::cout << *std::begin(iterable);
+    for (auto it = std::next(std::begin(iterable)); it != std::end(iterable); ++it) {
+        std::cout << ", " << *it;
+    }
+    std::cout << "]\n";
+}
+
+/*
+helper function for pretty-printing tuples
+source: https://stackoverflow.com/questions/6245735/pretty-print-stdtuple
+*/
+template <typename TupType, size_t... I>
+void print(const TupType& tup, std::index_sequence<I...>) {
+    std::cout << "(";
+    (..., (std::cout << (I == 0? "" : ", ") << std::get<I>(tup)));
+    std::cout << ")\n";
+}
+
+/*
+pretty-prints a tuple to cout
+source: https://stackoverflow.com/questions/6245735/pretty-print-stdtuple
+*/
+template <typename... T>
+void print(const std::tuple<T...>& tup) {
+    print(tup, std::make_index_sequence<sizeof...(T)>());
 }
 
 };  // namespace functools
