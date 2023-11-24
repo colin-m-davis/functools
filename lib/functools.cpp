@@ -205,14 +205,20 @@ returns a function that applies the input functions from left to right on its in
     }
 }
 
+/*
+returns the container...but sorted!
+*/
 [[nodiscard]] auto sorted(const auto& xs) {
     auto new_xs = xs;
     sort(new_xs.begin(), new_xs.end());
     return new_xs;
 }
 
+/*
+https://en.wikipedia.org/wiki/Total_order
+*/
 template <typename T>
-concept PartialEq = requires(T a, T b) {
+concept Ordered = requires(T a, T b) {
     {a < b} -> std::convertible_to<bool>;
     {a == b} -> std::convertible_to<bool>;
 };
@@ -220,7 +226,7 @@ concept PartialEq = requires(T a, T b) {
 /*
 half-open interval [a, b)
 */
-template <PartialEq T>
+template <Ordered T>
 [[nodiscard]] auto range_filter(T&& a, T&& b) {
     return
         [a, b](T c) { 

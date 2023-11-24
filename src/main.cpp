@@ -6,6 +6,7 @@
 #include <vector>
 #include <stdexcept>
 
+using namespace functools;
 
 template <typename T>
 void f(T) {
