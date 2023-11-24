@@ -29,7 +29,7 @@ using vec = std::vector<T>;
 /*
 creates a sequence of length N, starting from the init and repeatedly applying f on the last value in the sequence
 */
-auto recursive_seq(auto&& init, auto&& f, int N) {
+[[nodiscard]] auto recursive_seq(auto&& init, auto&& f, int N) {
     std::vector<std::decay_t<decltype(init)>> result;
     result.reserve(N);
     result.push_back(std::forward<decltype(init)>(init));
@@ -40,17 +40,20 @@ auto recursive_seq(auto&& init, auto&& f, int N) {
 }
 
 template <typename... Vecs>
-constexpr auto min_size(const Vecs&... vecs) {
+[[nodiscard]] constexpr auto min_size(const Vecs&... vecs) {
     return std::min({vecs.size()...});
 }
 
 template <typename... Vecs>
-constexpr auto make_tuple_at_index(int index, const Vecs&... vecs) {
+[[nodiscard]] constexpr auto make_tuple_at_index(int index, const Vecs&... vecs) {
     return std::make_tuple(vecs[index]...);
 }
 
+/*
+creates a vector of tuples from a sequence of vectors
+*/
 template <typename... Vecs>
-auto zip(Vecs&&... vecs) {
+[[nodiscard]] auto zip(Vecs&&... vecs) {
     std::vector<std::tuple<typename std::decay_t<Vecs>::value_type...>> result;
     const auto sz = min_size(vecs...);
     result.reserve(sz);
@@ -61,12 +64,15 @@ auto zip(Vecs&&... vecs) {
 }
 
 template <typename Vec>
-auto zip_with_indices(Vec&& vec) {
+[[nodiscard]] auto zip_with_indices(Vec&& vec) {
     return zip(recursive_seq(0, [](int x) { return x + 1; }, vec.size()), vec);
 }
 
+/*
+left fold
+*/
 template <typename F, typename Vec, typename Init>
-auto foldl(F&& f, const Vec& vec, Init&& init) {
+[[nodiscard]] auto foldl(F&& f, const Vec& vec, Init&& init) {
     auto accum = init;
     for (auto x = vec.cbegin(); x != vec.cend(); ++x) {
         accum = f(std::move(accum), *x);
@@ -74,8 +80,11 @@ auto foldl(F&& f, const Vec& vec, Init&& init) {
     return accum;
 }
 
+/*
+right fold
+*/
 template <typename F, typename Vec, typename Init>
-auto foldr(F&& f, const Vec& vec, Init&& init) {
+[[nodiscard]] auto foldr(F&& f, const Vec& vec, Init&& init) {
     auto accum = init;
     for (auto x = vec.crbegin(); x != vec.crend(); ++x) {
         accum = f(std::move(accum), *x);
@@ -83,8 +92,11 @@ auto foldr(F&& f, const Vec& vec, Init&& init) {
     return accum;
 }
 
+/*
+applies f to each element of the vec
+*/
 template <typename F, typename Vec>
-auto map(F&& f, const Vec& vec) {
+[[nodiscard]] auto map(F&& f, const Vec& vec) {
     using Elem = std::invoke_result_t<F, typename Vec::value_type>;
     std::vector<Elem> result;
     const auto sz = vec.size();
@@ -96,10 +108,10 @@ auto map(F&& f, const Vec& vec) {
 }
 
 /*
-f must take in an argument and return a vector
+f takes in an argument and returns a vector
 applies f to all elements of vec and merges the results into one vector
 */
-auto flat_map(auto&& f, const auto& vec) {
+[[nodiscard]] auto flat_map(auto&& f, const auto& vec) {
     using Elem = typename std::decay_t<decltype(f(*std::begin(vec)))>::value_type;
     std::vector<Elem> result;
     for (const auto& x : vec) {
@@ -111,7 +123,7 @@ auto flat_map(auto&& f, const auto& vec) {
 }
 
 template <typename T>
-auto filter(auto&& f, const std::vector<T>& vec) {
+[[nodiscard]] auto filter(auto&& f, const std::vector<T>& vec) {
     std::vector<T> result;
     for (const auto& x : vec) {
         if (f(x)) {
@@ -122,7 +134,7 @@ auto filter(auto&& f, const std::vector<T>& vec) {
 }
 
 template <typename T>
-auto filter(auto&& f, std::vector<T>&& vec) {
+[[nodiscard]] auto filter(auto&& f, std::vector<T>&& vec) {
     std::vector<T> result;
     for (auto&& x : vec) {
         if (f(x)) {
@@ -137,7 +149,7 @@ auto filter(auto&& f, std::vector<T>&& vec) {
 }
 
 template <typename T, std::size_t N, std::size_t... Is>
-auto deconstruct_impl(const std::vector<T>& vec, std::index_sequence<Is...>) {
+[[nodiscard]] auto deconstruct_impl(const std::vector<T>& vec, std::index_sequence<Is...>) {
     return std::make_tuple(vec[Is]..., vec[N - 1]);
 }
 
@@ -146,7 +158,7 @@ places the first N elements of a vector in an N-tuple
 useful in combination with structured binding
 */
 template <std::size_t N, typename T>
-auto deconstruct(const std::vector<T>& vec) {
+[[nodiscard]] auto deconstruct(const std::vector<T>& vec) {
     if (vec.size() < N) {
         throw std::invalid_argument("Vector size is less than N");
     }
@@ -160,7 +172,7 @@ concept BooleanConvertible = std::convertible_to<T, bool>;
 returns true if and only if all of the arguments are true
 */
 template <BooleanConvertible... Args>
-bool all_of(Args... args) {
+[[nodiscard]] bool all_of(Args... args) {
     return (args && ...);
 }
 
@@ -168,7 +180,7 @@ bool all_of(Args... args) {
 returns true if and only if at least one of the arguments is true
 */
 template <BooleanConvertible... Args>
-bool one_of(Args... args) {
+[[nodiscard]] bool one_of(Args... args) {
     return (args || ...);
 }
 
@@ -183,7 +195,7 @@ bool none_of(Args... args) {
 /*
 returns a function that applies the input functions from left to right on its inputs
 */
-auto pipeline(auto&& first, auto&&... rest) {
+[[nodiscard]] auto pipeline(auto&& first, auto&&... rest) {
     if constexpr (sizeof...(rest) == 0) {
         return first;
     } else {
@@ -193,7 +205,7 @@ auto pipeline(auto&& first, auto&&... rest) {
     }
 }
 
-auto sorted(const auto& xs) {
+[[nodiscard]] auto sorted(const auto& xs) {
     auto new_xs = xs;
     sort(new_xs.begin(), new_xs.end());
     return new_xs;
@@ -209,7 +221,7 @@ concept PartialEq = requires(T a, T b) {
 half-open interval [a, b)
 */
 template <PartialEq T>
-auto range_filter(T&& a, T&& b) {
+[[nodiscard]] auto range_filter(T&& a, T&& b) {
     return
         [a, b](T c) { 
             return (a == c || a < c) && c < b;
@@ -217,7 +229,7 @@ auto range_filter(T&& a, T&& b) {
 }
 
 template <typename T>
-std::pair<T, T> divmod(T x, T d) {
+[[nodiscard]] std::pair<T, T> divmod(T x, T d) {
     return {x / d, x % d};
 }
 
