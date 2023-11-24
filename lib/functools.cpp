@@ -7,7 +7,7 @@
 #include <utility>
 #include <iostream>
 
-// namespace functools {
+namespace functools {
 
 // source: https://stackoverflow.com/questions/6245735/pretty-print-stdtuple
 template <typename TupType, size_t... I>
@@ -233,4 +233,4 @@ template <typename T>
     return {x / d, x % d};
 }
 
-// };  // namespace functools
+};  // namespace functools
