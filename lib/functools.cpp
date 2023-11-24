@@ -81,10 +81,22 @@ template <typename Vec>
 left fold (left-to-right)
 https://en.wikipedia.org/wiki/Fold_(higher-order_function)
 */
+template <typename F, typename Vec>
+[[nodiscard]] auto foldl(F&& f, const Vec& vec) {
+    auto accum = *std::cbegin(vec);
+    for (auto x = std::next(std::cbegin(vec)); x != std::cend(vec); ++x) {
+        accum = f(std::move(accum), *x);
+    }
+    return accum;
+}
+
+/*
+left fold with initial value
+*/
 template <typename F, typename Vec, typename Init>
 [[nodiscard]] auto foldl(F&& f, const Vec& vec, Init&& init) {
     auto accum = init;
-    for (auto x = vec.cbegin(); x != vec.cend(); ++x) {
+    for (auto x = std::cbegin(vec); x != std::cend(vec); ++x) {
         accum = f(std::move(accum), *x);
     }
     return accum;
@@ -94,10 +106,22 @@ template <typename F, typename Vec, typename Init>
 right fold (right-to-left)
 https://en.wikipedia.org/wiki/Fold_(higher-order_function)
 */
+template <typename F, typename Vec>
+[[nodiscard]] auto foldr(F&& f, const Vec& vec) {
+    auto accum = *std::crbegin(vec);
+    for (auto x = std::next(std::crbegin(vec)); x != std::crend(vec); ++x) {
+        accum = f(std::move(accum), *x);
+    }
+    return accum;
+}
+
+/*
+right fold with initial value
+*/
 template <typename F, typename Vec, typename Init>
 [[nodiscard]] auto foldr(F&& f, const Vec& vec, Init&& init) {
     auto accum = init;
-    for (auto x = vec.crbegin(); x != vec.crend(); ++x) {
+    for (auto x = std::crbegin(vec); x != std::crend(vec); ++x) {
         accum = f(std::move(accum), *x);
     }
     return accum;
@@ -167,7 +191,7 @@ template <typename T>
 }
 
 /*
-returns the container...but sorted!
+returns the container... but sorted!
 */
 [[nodiscard]] auto sorted(const auto& xs) {
     auto new_xs = xs;
@@ -176,7 +200,7 @@ returns the container...but sorted!
 }
 
 /*
-returns the container...but reversed!
+returns the container... but reversed!
 */
 [[nodiscard]] auto reversed(const auto& xs) {
     return std::vector(xs.crbegin(), xs.crend());
@@ -239,7 +263,7 @@ concept Ordered = requires(T a, T b) {
 };
 
 /*
-half-open interval [a, b)
+returns a function that returns whether an elemet lies in the half-open interval [a, b)
 */
 template <Ordered T>
 [[nodiscard]] auto range_filter(T&& a, T&& b) {
