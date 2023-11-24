@@ -241,6 +241,13 @@ returns the container...but sorted!
 }
 
 /*
+returns the container...but reversed!
+*/
+[[nodiscard]] auto reversed(const auto& xs) {
+    return std::vector(xs.crbegin(), xs.crend());
+}
+
+/*
 https://en.wikipedia.org/wiki/Total_order
 */
 template <typename T>
