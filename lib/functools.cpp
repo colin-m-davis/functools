@@ -46,25 +46,7 @@ constexpr auto min_size(const Vecs&... vecs) {
 
 template <typename... Vecs>
 constexpr auto make_tuple_at_index(int index, const Vecs&... vecs) {
-    std::cout << "make tuple at index const lvalue ref\n";
     return std::make_tuple(vecs[index]...);
-}
-
-template <typename... Vecs>
-constexpr auto make_tuple_at_index(int index, Vecs&&... vecs) {
-    std::cout << "make tuple at index rvalue ref\n";
-    return std::make_tuple(std::move(vecs[index])...);
-}
-
-template <typename... Vecs>
-auto zip(const Vecs&... vecs) {
-    std::vector<std::tuple<typename std::decay_t<Vecs>::value_type...>> result;
-    const auto sz = min_size(vecs...);
-    result.reserve(sz);
-    for (auto i = 0; i < sz; ++i) {
-        result.push_back(make_tuple_at_index(i, vecs...));
-    }
-    return result;
 }
 
 template <typename... Vecs>
