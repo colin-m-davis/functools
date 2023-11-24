@@ -11,16 +11,16 @@
 
 // source: https://stackoverflow.com/questions/6245735/pretty-print-stdtuple
 template <typename TupType, size_t... I>
-void print(const TupType& _tup, std::index_sequence<I...>) {
+void print(const TupType& tup, std::index_sequence<I...>) {
     std::cout << "(";
-    (..., (std::cout << (I == 0? "" : ", ") << std::get<I>(_tup)));
+    (..., (std::cout << (I == 0? "" : ", ") << std::get<I>(tup)));
     std::cout << ")\n";
 }
 
 // source: https://stackoverflow.com/questions/6245735/pretty-print-stdtuple
 template <typename... T>
-void print (const std::tuple<T...>& _tup) {
-    print(_tup, std::make_index_sequence<sizeof...(T)>());
+void print(const std::tuple<T...>& tup) {
+    print(tup, std::make_index_sequence<sizeof...(T)>());
 }
 
 template <typename T>
@@ -206,7 +206,7 @@ concept PartialEq = requires(T a, T b) {
 };
 
 /*
-half-open interval
+half-open interval [a, b)
 */
 template <PartialEq T>
 auto range_filter(T&& a, T&& b) {
@@ -214,6 +214,11 @@ auto range_filter(T&& a, T&& b) {
         [a, b](T c) { 
             return (a == c || a < c) && c < b;
         };
+}
+
+template <typename T>
+std::pair<T, T> divmod(T x, T d) {
+    return {x / d, x % d};
 }
 
 // };  // namespace functools
