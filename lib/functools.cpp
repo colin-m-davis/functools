@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <utility>
 #include <iostream>
+#include <iterator>
 
 namespace functools {
 
@@ -21,6 +22,21 @@ void print(const TupType& tup, std::index_sequence<I...>) {
 template <typename... T>
 void print(const std::tuple<T...>& tup) {
     print(tup, std::make_index_sequence<sizeof...(T)>());
+}
+
+template <typename T>
+concept Iterable = requires(T x) {
+    { std::begin(x) } -> std::forward_iterator;
+    { std::end(x) } -> std::forward_iterator;
+};
+
+void print(const Iterable auto& iterable) {
+    std::cout << "[";
+    std::cout << *std::begin(iterable);
+    for (auto it = std::next(std::begin(iterable)); it != std::end(iterable); ++it) {
+        std::cout << ", " << *it;
+    }
+    std::cout << "]\n";
 }
 
 template <typename T>
@@ -96,7 +112,7 @@ template <typename F, typename Vec, typename Init>
 applies f to each element of the vec
 */
 template <typename F, typename Vec>
-[[nodiscard]] auto map(F&& f, const Vec& vec) {
+[[nodiscard]] auto map(F&& f, const Vec& vec) -> Vec {
     using Elem = std::invoke_result_t<F, typename Vec::value_type>;
     std::vector<Elem> result;
     const auto sz = vec.size();
@@ -122,22 +138,29 @@ applies f to all elements of vec and merges the results into one vector
     return result;
 }
 
+
+/*
+returns a vector containing those elements x in the input vector for which pred(x) is true
+*/
 template <typename T>
-[[nodiscard]] auto filter(auto&& f, const std::vector<T>& vec) {
+[[nodiscard]] auto filter(auto&& pred, const std::vector<T>& vec) {
     std::vector<T> result;
     for (const auto& x : vec) {
-        if (f(x)) {
+        if (pred(x)) {
             result.push_back(x);
         }
     }
     return result;
 }
 
+/*
+overload to enable move semantics
+*/
 template <typename T>
-[[nodiscard]] auto filter(auto&& f, std::vector<T>&& vec) {
+[[nodiscard]] auto filter(auto&& pred, std::vector<T>&& vec) {
     std::vector<T> result;
     for (auto&& x : vec) {
-        if (f(x)) {
+        if (pred(x)) {
             if constexpr (std::is_nothrow_move_constructible_v<T>) {
                 result.push_back(std::move(x));
             } else {
@@ -148,6 +171,9 @@ template <typename T>
     return result;
 }
 
+/*
+need separate impl function to take in index sequence as parameter pack
+*/
 template <typename T, std::size_t N, std::size_t... Is>
 [[nodiscard]] auto deconstruct_impl(const std::vector<T>& vec, std::index_sequence<Is...>) {
     return std::make_tuple(vec[Is]..., vec[N - 1]);
